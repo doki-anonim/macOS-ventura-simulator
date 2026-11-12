@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>macOS Simülatör (Sınırsız - doki)</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      user-select: none;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #000000;
+      background-image: url('44.jpg');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      color: #ffffff;
+    }
+
+    /* Üst Menü Çubuğu */
+    .top-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 30px;
+      background: rgba(24, 24, 28, 0.85);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 14px;
+      font-size: 13px;
+      z-index: 9999;
+    }
+
+    .top-left, .top-right {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .menu-item {
+      padding: 3px 9px;
+      border-radius: 5px;
+      cursor: pointer;
+      position: relative;
+      white-space: nowrap;
+      transition: background 0.15s ease;
+    }
+
+    .menu-item:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .dropdown {
+      display: none;
+      position: absolute;
+      top: 28px;
+      left: 0;
+      min-width: 210px;
+      background: rgba(34, 34, 38, 0.96);
+      backdrop-filter: blur(25px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      padding: 5px;
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.85);
+      z-index: 10000;
+    }
+
+    .menu-item:hover .dropdown {
+      display: block;
+    }
+
+    .dropdown div {
+      padding: 7px 12px;
+      border-radius: 5px;
+      font-size: 12px;
+      color: #f2f2f7;
+    }
+
+    .dropdown div:hover {
+      background: #0a84ff;
+      color: #fff;
+    }
+
+    .dropdown hr {
+      border: none;
+      border-top: 1px solid rgba(255, 255, 255, 0.12);
+      margin: 4px 0;
+    }
+
+    /* Masaüstü Alanı */
+    .desktop {
+      position: fixed;
+      top: 30px;
+      bottom: 105px;
+      left: 0;
+      right: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      flex-wrap: wrap-reverse;
+      align-content: flex-end;
+      gap: 14px;
+      overflow: hidden;
+    }
+
+    .desktop-icon {
+      width: 86px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      padding: 7px;
+      border-radius: 10px;
+      text-align: center;
+      transition: background 0.15s ease, transform 0.15s ease;
+    }
+
+    .desktop-icon:hover {
+      background: rgba(255, 255, 255, 0.18);
+    }
+
+    .desktop-icon img {
+      width: 54px;
+      height: 54px;
+      border-radius: 13px;
+      object-fit: cover;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      background: #141416;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    }
+
+    .desktop-icon span {
+      font-size: 11px;
+      font-weight: 500;
+      color: #fff;
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.95);
+      max-width: 80px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* Uygulama Penceresi */
+    .window {
+      width: 620px;
+      max-width: 92vw;
+      height: 430px;
+      max-height: 70vh;
+      background: rgba(28, 28, 32, 0.94);
+      backdrop-filter: blur(30px);
+      -webkit-backdrop-filter: blur(30px);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      border-radius: 14px;
+      box-shadow: 0 28px 70px rgba(0, 0, 0, 0.9);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: fixed;
+      top: 45%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 5000;
+    }
+
+    .window.hidden {
+      display: none;
+    }
+
+    .window-header {
+      height: 38px;
+      background: rgba(44, 44, 48, 0.85);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+      display: flex;
+      align-items: center;
+      padding: 0 14px;
+      cursor: grab;
+    }
+
+    .window-header:active {
+      cursor: grabbing;
+    }
+
+    .traffic-lights {
+      display: flex;
+      gap: 8px;
+    }
+
+    .light {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    .close { background: #ff5f56; }
+    .minimize { background: #ffbd2e; }
+    .maximize { background: #27c93f; }
+
+    .window-title {
+      flex: 1;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 600;
+      color: #f2f2f7;
+      margin-right: 44px;
+    }
+
+    .window-body {
+      flex: 1;
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      overflow-y: auto;
+      text-align: center;
+    }
+
+    .window-body img.preview-img {
+      max-width: 100%;
+      max-height: 230px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+    }
+
+    .dev-card {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 12px;
+      padding: 16px;
+      font-size: 14px;
+      line-height: 1.6;
+      color: #f2f2f7;
+      max-width: 500px;
+    }
+
+    /* Genişleyen Büyük Alt Dock Çubuğu */
+    .dock-wrapper {
+      position: fixed;
+      bottom: 14px;
+      left: 0;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      z-index: 9999;
+      pointer-events: none;
+    }
+
+    .dock {
+      pointer-events: auto;
+      background: rgba(36, 36, 42, 0.78);
+      backdrop-filter: blur(26px);
+      -webkit-backdrop-filter: blur(26px);
+      border: 1px solid rgba(255, 255, 255, 0.24);
+      border-radius: 24px;
+      padding: 10px 16px;
+      display: flex;
+      align-items: flex-end;
+      gap: 14px;
+      max-width: 96vw;
+      overflow-x: auto;
+      overflow-y: visible;
+      box-shadow: 0 14px 40px rgba(0, 0, 0, 0.85);
+      transition: padding 0.25s cubic-bezier(0.25, 1, 0.5, 1), gap 0.25s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+
+    .dock:hover {
+      padding: 12px 22px;
+      gap: 18px;
+    }
+
+    .dock-item {
+      width: 64px;
+      height: 64px;
+      min-width: 64px;
+      border-radius: 16px;
+      cursor: pointer;
+      transition: transform 0.22s cubic-bezier(0.25, 1, 0.5, 1), margin 0.22s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #161618;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      overflow: hidden;
+      position: relative;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.6);
+    }
+
+    .dock-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .dock-item:hover {
+      transform: scale(1.4) translateY(-12px);
+      margin: 0 10px;
+      z-index: 10;
+    }
+
+    .dock-item:has(+ .dock-item:hover),
+    .dock-item:hover + .dock-item {
+      transform: scale(1.18) translateY(-5px);
+      margin: 0 4px;
+    }
+
+    .dock-divider {
+      width: 1px;
+      height: 50px;
+      background: rgba(255, 255, 255, 0.25);
+      margin: 0 2px;
+      align-self: center;
+    }
+
+    .trash-badge {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      background: #ff453a;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.6);
+    }
+
+    .trash-drop-active {
+      transform: scale(1.45) translateY(-14px) !important;
+      border: 2px solid #ff453a !important;
+      box-shadow: 0 0 20px rgba(255, 69, 58, 0.8) !important;
+    }
+
+    /* Butonlar ve Duvar Kağıdı Kartları */
+    .btn {
+      background: #0a84ff;
+      color: #fff;
+      border: none;
+      padding: 9px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn:hover { background: #0070e0; }
+    .btn-danger { background: #ff453a; }
+    .btn-danger:hover { background: #d9382e; }
+    .btn-secondary { background: rgba(255,255,255,0.15); }
+    .btn-secondary:hover { background: rgba(255,255,255,0.25); }
+
+    .wp-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      width: 100%;
+      max-width: 440px;
+    }
+
+    .wp-card {
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.2);
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: center;
+      transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+    .wp-card:hover {
+      transform: scale(1.03);
+      border-color: #0a84ff;
+    }
+
+    .trash-list {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 220px;
+      overflow-y: auto;
+    }
+
+    .trash-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(255,255,255,0.07);
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+    }
+
+    .trash-row-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .trash-row-left img {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      object-fit: cover;
+    }
+
+    /* Sürükle Bırak Katmanı */
+    .drop-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(10, 132, 255, 0.28);
+      backdrop-filter: blur(6px);
+      border: 4px dashed #0a84ff;
+      z-index: 20000;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: 700;
+      color: #fff;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+    }
+
+    /* Yeniden Başlatma (Loading startup options...) Ekranı */
+    .restart-screen {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: #000000;
+      z-index: 99999;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 32px;
+      color: #d1d1d6;
+    }
+
+    .restart-screen svg {
+      width: 82px;
+      height: 82px;
+      fill: #ffffff;
+    }
+
+    .restart-text {
+      font-size: 19px;
+      font-weight: 400;
+      letter-spacing: 0.3px;
+      color: #e5e5ea;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sürükle-Bırak Bildirim Katmanı -->
+  <div class="drop-overlay" id="dropOverlay">Fotoğrafları Buraya Bırakın (Sınırsız ve Kalıcı Kaydedilir)</div>
+
+  <!-- Yeniden Başlatma Ekranı -->
+  <div class="restart-screen" id="restartScreen">
+    <svg viewBox="0 0 170 170">
+      <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.13-1.9-14.34-6.08-3.69-3.03-7.61-7.82-11.77-14.37-5.08-7.96-9.26-17.11-12.54-27.46-3.28-10.35-4.92-20.14-4.92-29.37 0-10.97 2.75-20.12 8.26-27.46 5.51-7.34 12.42-11.12 20.73-11.34 4.12 0 8.95 1.28 14.48 3.84 5.53 2.56 9.09 3.88 10.67 3.96 1.23 0 5.19-1.53 11.88-4.58 6.69-3.05 12.34-4.35 16.95-3.9 12.51 1.01 21.92 5.95 28.23 14.82-11.22 6.81-16.72 16.33-16.5 28.56.22 9.53 3.77 17.46 10.64 23.79 4.86 4.53 10.56 7.36 17.1 8.49-1.38 4.24-2.92 8.33-4.63 12.27zM119.22 31.9c0 7.45-2.72 14.4-8.16 20.84-6.56 7.67-14.49 12.11-23.11 11.41-.11-.91-.17-1.88-.17-2.91 0-7.15 3.12-14.8 8.67-21.08 2.77-3.18 6.29-5.82 10.56-7.92 4.27-2.1 8.32-3.26 12.15-3.48.04 1.05.06 2.1.06 3.14z"/>
+    </svg>
+    <div class="restart-text">Loading startup options...</div>
+  </div>
+
+  <!-- Üst Menü Çubuğu -->
+  <div class="top-bar">
+    <div class="top-left">
+      <div class="menu-item"><strong></strong>
+        <div class="dropdown">
+          <div onclick="openDeveloperApp()">Bu Mac Hakkında (doki)</div>
+          <div onclick="openWallpaperApp()">Duvar Kağıdı Değiştir...</div>
+          <hr>
+          <div onclick="triggerRestart()">↻ Yeniden Başlat...</div>
+          <hr>
+          <div onclick="resetAllExtensions()" style="color:#ff453a;">🧹 Eklentileri Sıfırla</div>
+        </div>
+      </div>
+      <div class="menu-item"><strong>Finder</strong>
+        <div class="dropdown">
+          <div onclick="openDeveloperApp()">Geliştirici Hakkında</div>
+          <div onclick="openTrashApp()">Çöp Kutusunu Aç</div>
+        </div>
+      </div>
+      <div class="menu-item">Dosya
+        <div class="dropdown">
+          <div onclick="document.getElementById('fileInput').click()">+ Fotoğraflardan Uygulama Ekle</div>
+          <div onclick="openWallpaperApp()">Duvar Kağıdını Değiştir</div>
+          <div onclick="closeApp()">Pencereyi Kapat</div>
+        </div>
+      </div>
+      <div class="menu-item">Düzen
+        <div class="dropdown">
+          <div>Geri Al</div>
+          <div>Kopyala</div>
+          <div>Yapıştır</div>
+        </div>
+      </div>
+      <div class="menu-item">Görüntü
+        <div class="dropdown">
+          <div onclick="toggleFullscreen()">Tam Ekrana Geç</div>
+          <div onclick="openWallpaperApp()">Arka Plan Ayarları</div>
+        </div>
+      </div>
+      <div class="menu-item">Git
+        <div class="dropdown">
+          <div onclick="openDeveloperApp()">Geliştirici (doki)</div>
+          <div onclick="openWallpaperApp()">Duvar Kağıdı</div>
+          <div onclick="openTrashApp()">Çöp Kutusu</div>
+        </div>
+      </div>
+      <div class="menu-item">Pencere
+        <div class="dropdown">
+          <div onclick="closeApp()">Küçült</div>
+        </div>
+      </div>
+      <div class="menu-item">Yardım
+        <div class="dropdown">
+          <div onclick="openDeveloperApp()">Geliştirici ile İletişim (doki)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="top-right">
+      <div class="menu-item" onclick="document.getElementById('fileInput').click()">+ Foto Ekle</div>
+      <div class="menu-item" onclick="openWallpaperApp()">🖼️ Duvar Kağıdı</div>
+      <div class="menu-item" onclick="openDeveloperApp()">👨‍💻 doki</div>
+      <div class="menu-item" onclick="resetAllExtensions()" style="color:#ff6961;">🧹 Eklentileri Sıfırla</div>
+      <div class="menu-item" onclick="triggerRestart()">↻ Yeniden Başlat</div>
+      <div class="menu-item" id="clock">Çar 17:45</div>
+    </div>
+  </div>
+
+  <!-- Gizli Çoklu Fotoğraf Seçici -->
+  <input type="file" id="fileInput" multiple accept="image/*" style="display:none" onchange="handleFiles(this.files)">
+  <!-- Gizli Duvar Kağıdı Seçici -->
+  <input type="file" id="wpInput" accept="image/*" style="display:none" onchange="handleWallpaperFile(this.files)">
+
+  <!-- Masaüstü Alanı -->
+  <div class="desktop" id="desktopArea"></div>
+
+  <!-- Uygulama Penceresi -->
+  <div class="window hidden" id="win">
+    <div class="window-header" id="winHeader">
+      <div class="traffic-lights">
+        <div class="light close" onclick="closeApp()"></div>
+        <div class="light minimize" onclick="closeApp()"></div>
+        <div class="light maximize" onclick="toggleFullscreen()"></div>
+      </div>
+      <div class="window-title" id="winTitle">Uygulama</div>
+    </div>
+    <div class="window-body" id="winBody"></div>
+  </div>
+
+  <!-- Genişleyen Büyük Alt Dock Menüsü -->
+  <div class="dock-wrapper">
+    <div class="dock" id="dockBar"></div>
+  </div>
+
+  <script>
+    // Neon Pembe-Turuncu Devreli "doki" Logosu (SVG Data URI)
+    const dokiLogoSvg = "data:image/svg+xml;utf8," + encodeURIComponent(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+        <defs>
+          <linearGradient id="dokiGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#ff007f"/>
+            <stop offset="50%" stop-color="#ff4d4d"/>
+            <stop offset="100%" stop-color="#ff8c00"/>
+          </linearGradient>
+          <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="8" result="blur"/>
+            <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+          </filter>
+        </defs>
+        <rect width="512" height="512" rx="110" fill="#050507"/>
+        <g stroke="url(#dokiGrad)" stroke-width="3" fill="none" opacity="0.55">
+          <path d="M20 180 H110 L140 210 H180"/>
+          <path d="M20 260 H95 L120 235"/>
+          <path d="M20 330 H125 L155 300"/>
+          <path d="M492 180 H402 L372 210 H332"/>
+          <path d="M492 260 H417 L392 235"/>
+          <path d="M492 330 H387 L357 300"/>
+          <circle cx="110" cy="180" r="5" fill="#ff007f"/>
+          <circle cx="402" cy="180" r="5" fill="#ff8c00"/>
+          <circle cx="95" cy="260" r="5" fill="#ff007f"/>
+          <circle cx="417" cy="260" r="5" fill="#ff8c00"/>
+        </g>
+        <text x="256" y="295" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="900" font-size="148" fill="url(#dokiGrad)" text-anchor="middle" letter-spacing="-4" filter="url(#glow)">doki</text>
+      </svg>
+    `);
+
+    // Duvar Kağıdı Uygulama İkonu
+    const wallpaperIconSvg = "data:image/svg+xml;utf8," + encodeURIComponent(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+        <defs>
+          <linearGradient id="wpGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#0a84ff"/>
+            <stop offset="50%" stop-color="#5e5ce6"/>
+            <stop offset="100%" stop-color="#bf5af2"/>
+          </linearGradient>
+        </defs>
+        <rect width="512" height="512" rx="110" fill="url(#wpGrad)"/>
+        <circle cx="175" cy="175" r="42" fill="#ffd60a"/>
+        <path d="M70 390 L200 240 L295 345 L365 275 L442 390 Z" fill="#ffffff" opacity="0.92"/>
+      </svg>
+    `);
+
+    // Çöp Kutusu İkonu
+    const trashIconSvg = "data:image/svg+xml;utf8," + encodeURIComponent(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+        <rect width="512" height="512" rx="110" fill="#2c2c2e"/>
+        <path d="M160 170 H352 L334 405 C332 422 318 434 301 434 H211 C194 434 180 422 178 405 Z" fill="#d1d1d6"/>
+        <rect x="140" y="132" width="232" height="26" rx="13" fill="#f2f2f7"/>
+        <path d="M215 132 V108 C215 99 222 92 231 92 H281 C290 92 297 99 297 108 V132" stroke="#f2f2f7" stroke-width="18" fill="none"/>
+        <line x1="215" y1="210" x2="222" y2="385" stroke="#636366" stroke-width="14" stroke-linecap="round"/>
+        <line x1="256" y1="210" x2="256" y2="385" stroke="#636366" stroke-width="14" stroke-linecap="round"/>
+        <line x1="297" y1="210" x2="290" y2="385" stroke="#636366" stroke-width="14" stroke-linecap="round"/>
+      </svg>
+    `);
+
+    const developerBioText = "merhaba ben doki😁 ben gizli ve kimsenin bilmediği bir kişiyim ve python,html,css,javascript ve c ile bu simülatörü yaptım en çok sevdiğim alanlar;NODEJS github ve vercel buradan istediğiniz birşey olursa mutlaka söyleyin biz yapalım";
+
+    // IndexedDB Sınırsız Depolama Altyapısı (5MB Kota Sınırını Kaldırır)
+    const DB_NAME = "MacOSSimulatorUnlimitedDB";
+    const STORE_NAME = "stateStore";
+    let db = null;
+
+    let customApps = [];
+    let trashApps = [];
+    let currentWallpaper = "url('44.jpg')";
+    let draggedAppId = null;
+
+    function initDB() {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, 1);
+        request.onupgradeneeded = (e) => {
+          const database = e.target.result;
+          if (!database.objectStoreNames.contains(STORE_NAME)) {
+            database.createObjectStore(STORE_NAME);
+          }
+        };
+        request.onsuccess = (e) => {
+          db = e.target.result;
+          resolve(db);
+        };
+        request.onerror = (e) => reject(e);
+      });
+    }
+
+    function dbGet(key) {
+      return new Promise((resolve) => {
+        if (!db) return resolve(null);
+        const tx = db.transaction(STORE_NAME, "readonly");
+        const store = tx.objectStore(STORE_NAME);
+        const req = store.get(key);
+        req.onsuccess = () => resolve(req.result || null);
+        req.onerror = () => resolve(null);
+      });
+    }
+
+    function dbSet(key, val) {
+      return new Promise((resolve) => {
+        if (!db) return resolve();
+        const tx = db.transaction(STORE_NAME, "readwrite");
+        const store = tx.objectStore(STORE_NAME);
+        const req = store.put(val, key);
+        req.onsuccess = () => resolve();
+        req.onerror = () => resolve();
+      });
+    }
+
+    async function loadSavedState() {
+      await initDB();
+      const savedCustom = await dbGet("customApps");
+      const savedTrash = await dbGet("trashApps");
+      const savedWp = await dbGet("wallpaper");
+
+      if (savedCustom) customApps = savedCustom;
+      if (savedTrash) trashApps = savedTrash;
+      if (savedWp) currentWallpaper = savedWp;
+
+      applyWallpaper(currentWallpaper, false);
+      renderDesktopAndDock();
+    }
+
+    function applyWallpaper(wpValue, save = true) {
+      currentWallpaper = wpValue;
+      if (wpValue.startsWith("url(")) {
+        document.body.style.backgroundColor = "#000000";
+        document.body.style.backgroundImage = wpValue;
+      } else {
+        document.body.style.backgroundImage = "none";
+        document.body.style.backgroundColor = wpValue;
+      }
+      if (save) dbSet("wallpaper", wpValue);
+    }
+
+    // Yüksek Çözünürlüklü Fotoğrafları Hızlı ve Akıcı Hale Getiren Optimizasyon
+    function compressImageFile(file) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onload = () => {
+            const maxDim = 900;
+            let w = img.width;
+            let h = img.height;
+            if (w > maxDim || h > maxDim) {
+              if (w > h) {
+                h = Math.round((h * maxDim) / w);
+                w = maxDim;
+              } else {
+                w = Math.round((w * maxDim) / h);
+                h = maxDim;
+              }
+            }
+            const canvas = document.createElement("canvas");
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0, w, h);
+            resolve(canvas.toDataURL("image/jpeg", 0.86));
+          };
+          img.onerror = () => resolve(e.target.result);
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function handleFiles(files) {
+      const fileList = Array.from(files).filter(f => f.type.startsWith("image/"));
+      if (!fileList.length) return;
+
+      for (const file of fileList) {
+        const optimizedDataUrl = await compressImageFile(file);
+        const cleanName = file.name.replace(/\.[^/.]+$/, "");
+        customApps.push({
+          id: "app_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8),
+          name: cleanName,
+          img: optimizedDataUrl
+        });
+      }
+      await dbSet("customApps", customApps);
+      renderDesktopAndDock();
+    }
+
+    async function handleWallpaperFile(files) {
+      const file = files[0];
+      if (!file || !file.type.startsWith("image/")) return;
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        applyWallpaper(`url('${e.target.result}')`, true);
+        openWallpaperApp();
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // Çöp Kutusuna Taşıma ve Geri Yükleme
+    async function moveToTrash(appId) {
+      const idx = customApps.findIndex(a => a.id === appId);
+      if (idx === -1) return;
+      const [removed] = customApps.splice(idx, 1);
+      trashApps.push(removed);
+      await dbSet("customApps", customApps);
+      await dbSet("trashApps", trashApps);
+      renderDesktopAndDock();
+    }
+
+    async function restoreFromTrash(appId) {
+      const idx = trashApps.findIndex(a => a.id === appId);
+      if (idx === -1) return;
+      const [restored] = trashApps.splice(idx, 1);
+      customApps.push(restored);
+      await dbSet("customApps", customApps);
+      await dbSet("trashApps", trashApps);
+      openTrashApp();
+      renderDesktopAndDock();
+    }
+
+    async function deleteForever(appId) {
+      trashApps = trashApps.filter(a => a.id !== appId);
+      await dbSet("trashApps", trashApps);
+      openTrashApp();
+      renderDesktopAndDock();
+    }
+
+    async function emptyTrash() {
+      trashApps = [];
+      await dbSet("trashApps", trashApps);
+      openTrashApp();
+      renderDesktopAndDock();
+    }
+
+    // Eklentileri Sıfırla Butonu Fonksiyonu
+    async function resetAllExtensions() {
+      customApps = [];
+      trashApps = [];
+      await dbSet("customApps", []);
+      await dbSet("trashApps", []);
+      applyWallpaper("url('44.jpg')", true);
+      closeApp();
+      renderDesktopAndDock();
+    }
+
+    // Masaüstü ve Dock Çizimi
+    function renderDesktopAndDock() {
+      const desk = document.getElementById("desktopArea");
+      const dock = document.getElementById("dockBar");
+      desk.innerHTML = "";
+      dock.innerHTML = "";
+
+      // Sabit Sistem Uygulamaları: Geliştirici Hakkında (doki) & Duvar Kağıdı
+      const systemApps = [
+        { name: "Geliştirici (doki)", img: dokiLogoSvg, action: openDeveloperApp },
+        { name: "Duvar Kağıdı", img: wallpaperIconSvg, action: openWallpaperApp }
+      ];
+
+      systemApps.forEach(sys => {
+        const dIcon = document.createElement("div");
+        dIcon.className = "desktop-icon";
+        dIcon.innerHTML = `<img src="${sys.img}"><span>${sys.name}</span>`;
+        dIcon.onclick = sys.action;
+        desk.appendChild(dIcon);
+
+        const kIcon = document.createElement("div");
+        kIcon.className = "dock-item";
+        kIcon.title = sys.name;
+        kIcon.innerHTML = `<img src="${sys.img}">`;
+        kIcon.onclick = sys.action;
+        dock.appendChild(kIcon);
+      });
+
+      // Kullanıcının Eklediği Sınırsız Fotoğraf Uygulamaları
+      customApps.forEach(app => {
+        const dIcon = document.createElement("div");
+        dIcon.className = "desktop-icon";
+        dIcon.draggable = true;
+        dIcon.innerHTML = `<img src="${app.img}"><span>${app.name}</span>`;
+        dIcon.onclick = () => openPhotoApp(app);
+        dIcon.ondragstart = () => { draggedAppId = app.id; };
+        dIcon.ondragend = () => { draggedAppId = null; };
+        desk.appendChild(dIcon);
+
+        const kIcon = document.createElement("div");
+        kIcon.className = "dock-item";
+        kIcon.title = app.name;
+        kIcon.draggable = true;
+        kIcon.innerHTML = `<img src="${app.img}">`;
+        kIcon.onclick = () => openPhotoApp(app);
+        kIcon.ondragstart = () => { draggedAppId = app.id; };
+        kIcon.ondragend = () => { draggedAppId = null; };
+        dock.appendChild(kIcon);
+      });
+
+      // Ayırıcı Çizgi ve Çöp Kutusu
+      const divider = document.createElement("div");
+      divider.className = "dock-divider";
+      dock.appendChild(divider);
+
+      const trashItem = document.createElement("div");
+      trashItem.className = "dock-item";
+      trashItem.title = "Çöp Kutusu (Silmek istediğiniz uygulamayı buraya sürükleyin)";
+      trashItem.innerHTML = `<img src="${trashIconSvg}">${trashApps.length > 0 ? `<span class="trash-badge">${trashApps.length}</span>` : ""}`;
+      trashItem.onclick = openTrashApp;
+
+      trashItem.ondragover = (e) => {
+        e.preventDefault();
+        trashItem.classList.add("trash-drop-active");
+      };
+      trashItem.ondragleave = () => {
+        trashItem.classList.remove("trash-drop-active");
+      };
+      trashItem.ondrop = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        trashItem.classList.remove("trash-drop-active");
+        if (draggedAppId) {
+          moveToTrash(draggedAppId);
+          draggedAppId = null;
+        }
+      };
+
+      dock.appendChild(trashItem);
+    }
+
+    // Pencere Açma Fonksiyonları
+    const win = document.getElementById("win");
+    const winTitle = document.getElementById("winTitle");
+    const winBody = document.getElementById("winBody");
+
+    function openPhotoApp(app) {
+      winTitle.textContent = app.name;
+      winBody.innerHTML = `
+        <img class="preview-img" src="${app.img}">
+        <p style="font-size:13px; color:#ccc;"><strong>${app.name}</strong> uygulaması simülatörde çalışmaz. Silmek için ikonu Çöp Kutusu'na sürükleyebilirsiniz.</p>
+      `;
+      win.classList.remove("hidden");
+    }
+
+    function openDeveloperApp() {
+      winTitle.textContent = "Geliştirici Hakkında - doki";
+      winBody.innerHTML = `
+        <img src="${dokiLogoSvg}" style="width:96px; height:96px; border-radius:22px; box-shadow:0 8px 25px rgba(255,0,127,0.4);">
+        <div class="dev-card">${developerBioText}</div>
+      `;
+      win.classList.remove("hidden");
+    }
+
+    function openWallpaperApp() {
+      winTitle.textContent = "Duvar Kağıdı Ayarları";
+      winBody.innerHTML = `
+        <p style="font-size:13px; color:#ddd;">Masaüstü arka planını bilgisayarınızdaki fotoğraflardan seçebilir veya hazır temaları kullanabilirsiniz.</p>
+        <button class="btn" onclick="document.getElementById('wpInput').click()">📁 Fotoğraflardan Duvar Kağıdı Seç</button>
+        <div class="wp-grid">
+          <div class="wp-card" style="background:#1c2833;" onclick="applyWallpaper(&quot;url('44.jpg')&quot;)">🌲 Varsayılan (44.jpg)</div>
+          <div class="wp-card" style="background:#000000;" onclick="applyWallpaper('#000000')">⬛ Tam Siyah</div>
+          <div class="wp-card" style="background:#0a192f;" onclick="applyWallpaper('#0a192f')">🌌 Gece Mavisi</div>
+          <div class="wp-card" style="background:#1f1610;" onclick="applyWallpaper('#1f1610')">🟫 Koyu Bronz</div>
+        </div>
+      `;
+      win.classList.remove("hidden");
+    }
+
+    function openTrashApp() {
+      winTitle.textContent = `Çöp Kutusu (${trashApps.length} Öğe)`;
+      if (trashApps.length === 0) {
+        winBody.innerHTML = `
+          <img src="${trashIconSvg}" style="width:76px; height:76px; opacity:0.7;">
+          <p style="font-size:14px; color:#aaa;">Çöp kutusu şu an boş. Silmek istediğiniz uygulamaları alt çubuktaki Çöp Kutusu ikonunun üzerine sürükleyin.</p>
+        `;
+      } else {
+        const rowsHtml = trashApps.map(item => `
+          <div class="trash-row">
+            <div class="trash-row-left">
+              <img src="${item.img}">
+              <span>${item.name}</span>
+            </div>
+            <div style="display:flex; gap:6px;">
+              <button class="btn btn-secondary" style="padding:5px 10px; font-size:12px;" onclick="restoreFromTrash('${item.id}')">Geri</button>
+              <button class="btn btn-danger" style="padding:5px 10px; font-size:12px;" onclick="deleteForever('${item.id}')">Sil</button>
+            </div>
+          </div>
+        `).join("");
+
+        winBody.innerHTML = `
+          <div class="trash-list">${rowsHtml}</div>
+          <button class="btn btn-danger" onclick="emptyTrash()">Çöp Kutusunu Boşalt</button>
+        `;
+      }
+      win.classList.remove("hidden");
+    }
+
+    function closeApp() {
+      win.classList.add("hidden");
+    }
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen().catch(() => {});
+      }
+    }
+
+    // Yeniden Başlatma (Loading startup options...)
+    function triggerRestart() {
+      const screen = document.getElementById("restartScreen");
+      screen.style.display = "flex";
+      setTimeout(() => {
+        screen.style.display = "none";
+      }, 3500);
+    }
+
+    // Dışarıdan Dosya Sürükle-Bırak Desteği
+    const overlay = document.getElementById("dropOverlay");
+    window.addEventListener("dragover", (e) => {
+      if (draggedAppId) return;
+      e.preventDefault();
+      overlay.style.display = "flex";
+    });
+    window.addEventListener("dragleave", (e) => {
+      if (e.relatedTarget === null) overlay.style.display = "none";
+    });
+    window.addEventListener("drop", (e) => {
+      overlay.style.display = "none";
+      if (draggedAppId) return;
+      e.preventDefault();
+      if (e.dataTransfer && e.dataTransfer.files.length > 0) {
+        handleFiles(e.dataTransfer.files);
+      }
+    });
+
+    // Canlı Saat
+    function updateClock() {
+      const d = new Date();
+      const days = ["Paz", "Pzt", "Sal", "Çar", "Per", "Cum", "Cmt"];
+      document.getElementById("clock").textContent = `${days[d.getDay()]} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // Pencere Sürükleme
+    const header = document.getElementById("winHeader");
+    let isDragging = false, ox = 0, oy = 0;
+    header.onmousedown = (e) => {
+      isDragging = true;
+      const r = win.getBoundingClientRect();
+      win.style.transform = "none";
+      win.style.left = r.left + "px";
+      win.style.top = r.top + "px";
+      ox = e.clientX - r.left;
+      oy = e.clientY - r.top;
+    };
+    document.onmousemove = (e) => {
+      if (!isDragging) return;
+      win.style.left = (e.clientX - ox) + "px";
+      win.style.top = (e.clientY - oy) + "px";
+    };
+    document.onmouseup = () => { isDragging = false; };
+
+    // Başlat
+    loadSavedState();
+  </script>
+</body>
+</html>
